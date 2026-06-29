@@ -1,17 +1,18 @@
-# flux
+# flux — forex-driven cellular automata
 
-Temperature waves from 10 world cities. Each city's temperature becomes a unique sine wave — hot cities oscillate fast with wide amplitude, cold cities slow and narrow.
+Live exchange rates shape the evolution of a cellular automata colony on a circuit-board grid.
 
-**Visual Style:** Dark — Abyss (ocean cyan on deep navy, thin glowing strokes, gentle motion)
+**Visual Style:** Dark — Circuit (digital precision, dot-grid background, green/blue/red palette, right-angle cells)
 
-**Data Source:** Open-Meteo current weather API (10 cities from Dubai to Reykjavik)
+**Data Source:** Frankfurter API (EUR/USD, EUR/GBP, EUR/JPY exchange rates)
 
 **How it works:**
-- Fetches real-time temperatures from Open-Meteo for 10 cities
-- Each city is a sine wave — frequency and amplitude scale with temperature
-- Three harmonic layers per wave for organic motion
-- Tap anywhere to create a ripple disturbance
-- Auto-refreshes every minute
+- Tap any cell to toggle it alive or dead
+- Tap empty space to pause or resume the simulation
+- EUR/USD, EUR/GBP, and EUR/JPY rates are fetched every 30 seconds from the Frankfurter API
+- Rate direction (up/down/flat) tints all alive cells green, red, or pale green
+- Volatility between rate updates controls the evolution speed (higher volatility = faster generations)
+- The grid initializes randomly and runs Conway's B3/S23 rule with toroidal wrapping
 
 **Live:** https://parthchandak02.github.io/flux/
 
