@@ -8,10 +8,14 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f}
 canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;touch-action:manipulation;image-rendering:pixelated}
+#databar{position:fixed;bottom:52px;left:0;right:0;text-align:center;color:rgba(0,255,100,0.3);font:10px/1.2 'Courier New',monospace;letter-spacing:1px;pointer-events:none;z-index:10}
+#geninfo{position:fixed;top:24px;right:24px;text-align:right;color:rgba(0,255,100,0.25);font:10px/1.5 'Courier New',monospace;pointer-events:none;z-index:10;letter-spacing:0.5px}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
+<div id="databar">Frankfurter Forex · loading...</div>
+<div id="geninfo"></div>
 <script>
 // ─── CONFIG ───
 const C = {
@@ -92,6 +96,8 @@ async function fetchForex() {
       rateDir = Math.sign(dirSum);
       volatility = Math.min(1, volSum / count);
       C.updateInterval = Math.round(C.maxInterval - volatility * (C.maxInterval - C.minInterval));
+      lastForexUpdate = Date.now();
+      lastFetchTime = performance.now();
     }
   } catch(e) { /* fallback defaults already set */ }
 }
@@ -102,6 +108,8 @@ setInterval(fetchForex, C.apiInterval);
 let grid = [];
 let dying = new Set();
 let running = true;
+let gen = 0;
+let lastForexUpdate = 0;
 
 function initGrid(density) {
   grid = [];
@@ -138,6 +146,7 @@ function step() {
   }
   grid = ng;
   dying = nd;
+  gen++;
 }
 
 // ─── DRAW ───
@@ -196,20 +205,52 @@ function draw() {
     }
   }
 
-  // Status bar — rates at bottom center
-  ctx.fillStyle = 'rgba(255,255,255,0.35)';
-  ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
+  // Count alive cells
+  let alive = 0;
+  for (let y = 0; y < C.rows; y++)
+    for (let x = 0; x < C.cols; x++)
+      if (grid[y][x]) alive++;
+  const dead = C.cols * C.rows - alive;
+
+  // Top-right rate panel
+  ctx.textAlign = 'right';
+  const rateColor = rateDir > 0 ? '#00e676' : rateDir < 0 ? '#ff1744' : '#b2ff59';
+  ctx.font = 'bold 18px system-ui, sans-serif';
+  ctx.fillStyle = rateColor;
+  ctx.fillText(ratesDisplay.USD, W - 14, 34);
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.fillText('EUR/USD', W - 14, 18);
+  // Mini direction dot
+  const m = ctx.measureText(ratesDisplay.USD);
+  ctx.fillStyle = rateColor;
+  ctx.beginPath();
+  ctx.arc(W - 14 - m.width - 8, 26, 3, 0, Math.PI * 2);
+  ctx.fill();
+
+  // Bottom data bar
   ctx.textAlign = 'center';
-  const dirSymbol = running ? (rateDir > 0 ? '\u2191' : rateDir < 0 ? '\u2193' : '\u2192') : '\u23F8';
+  ctx.fillStyle = 'rgba(255,255,255,0.35)';
+  ctx.font = '10px system-ui, sans-serif';
+  const secsAgo = lastForexUpdate ? Math.floor((Date.now() - lastForexUpdate) / 1000) : '--';
   ctx.fillText(
-    'EUR/USD ' + ratesDisplay.USD + '  EUR/GBP ' + ratesDisplay.GBP + '  EUR/JPY ' + ratesDisplay.JPY + '  ' + dirSymbol,
-    W / 2, H - 16
+    'Frankfurter Forex \u00B7 EUR/USD ' + ratesDisplay.USD + ' \u00B7 Gen ' + gen + ' \u00B7 updated ' + secsAgo + 's ago',
+    W / 2, H - 14
   );
+
+  // Gen + cell counts (monospace)
+  ctx.font = '11px "SF Mono", Monaco, "Cascadia Code", Menlo, monospace';
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.textAlign = 'left';
+  ctx.fillText('#' + gen, 14, H - 14);
+  ctx.textAlign = 'right';
+  ctx.fillText(alive + '\u2191 ' + dead + '\u2193', W - 14, H - 14);
 
   // Description at top center
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.fillText('Forex rates shape a living circuit - tap cells or tap empty to pause', W / 2, 20);
+  ctx.font = '10px system-ui, sans-serif';
+  ctx.fillText('Forex rates shape a living circuit \u00B7 tap cells or tap empty to pause', W / 2, 14);
 }
 
 // ─── LOOP ───
@@ -218,6 +259,14 @@ let lastUpdate = 0;
 function tick(ts) {
   if (running && ts - lastUpdate > C.updateInterval) {
     step();
+    genCount++;
+    let alive = 0;
+    for (let y = 0; y < C.rows; y++)
+      for (let x = 0; x < C.cols; x++)
+        if (grid[y][x]) alive++;
+    const dead = C.cols * C.rows - alive;
+    updateDataBar(ratesDisplay.USD, 'EUR/USD');
+    updateGenInfo(alive, dead);
     lastUpdate = ts;
   }
   draw();
@@ -262,6 +311,20 @@ canvas.addEventListener('touchstart', e => {
 // ─── START ───
 lastUpdate = performance.now();
 tick(lastUpdate);
+
+let genCount = 0;
+let lastFetchTime = performance.now();
+function updateDataBar(rate, pair) {
+  const el = document.getElementById('databar');
+  if (!el) return;
+  const ago = Math.round((performance.now() - lastFetchTime) / 1000);
+  el.textContent = `Frankfurter Forex · ${pair} ${rate} · gen ${genCount} · ${ago}s ago`;
+}
+function updateGenInfo(alive, dead) {
+  const el = document.getElementById('geninfo');
+  if (!el) return;
+  el.textContent = `alive ${alive} · dead ${dead}`;
+}
 </script>
 </body>
 </html>
