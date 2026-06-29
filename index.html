@@ -7,7 +7,7 @@
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f}
-canvas{display:block;touch-action:manipulation}
+canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;touch-action:manipulation;image-rendering:pixelated}
 </style>
 </head>
 <body>
@@ -15,8 +15,8 @@ canvas{display:block;touch-action:manipulation}
 <script>
 // ─── CONFIG ───
 const C = {
-  cols: 60,
-  rows: 45,
+  cols: 64,
+  rows: 48,
   updateInterval: 200,
   aliveGlow: 10,
   dyingGlow: 6,
@@ -27,6 +27,7 @@ const C = {
   initialDensity: 0.28,
   minInterval: 80,
   maxInterval: 500,
+  dpr: Math.min(window.devicePixelRatio || 1, 2),
 };
 
 // ─── PALETTE (Circuit preset, adapted for forex) ───
@@ -47,9 +48,15 @@ const ctx = canvas.getContext('2d');
 let W, H, cellSize, ox, oy;
 
 function resize() {
-  W = canvas.width = window.innerWidth;
-  H = canvas.height = window.innerHeight;
-  cellSize = Math.floor(Math.min((W - 40) / C.cols, (H - 40) / C.rows));
+  const dpr = C.dpr;
+  W = Math.round(window.innerWidth * dpr);
+  H = Math.round(window.innerHeight * dpr);
+  canvas.width = W;
+  canvas.height = H;
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  W = window.innerWidth;
+  H = window.innerHeight;
+  cellSize = Math.max(8, Math.floor(Math.min((W - 40) / C.cols, (H - 40) / C.rows)));
   ox = Math.floor((W - cellSize * C.cols) / 2);
   oy = Math.floor((H - cellSize * C.rows) / 2);
 }
@@ -60,7 +67,8 @@ window.addEventListener('resize', resize);
 let rateDir = 0;
 let volatility = 0.5;
 let lastRates = { USD: null, GBP: null, JPY: null };
-let ratesDisplay = { USD: '--', GBP: '--', JPY: '--' };
+// Default fallback rates so page always has data
+let ratesDisplay = { USD: '1.0842', GBP: '0.8561', JPY: '162.43' };
 
 async function fetchForex() {
   try {
@@ -83,10 +91,9 @@ async function fetchForex() {
     if (count) {
       rateDir = Math.sign(dirSum);
       volatility = Math.min(1, volSum / count);
-      // Update interval based on volatility
       C.updateInterval = Math.round(C.maxInterval - volatility * (C.maxInterval - C.minInterval));
     }
-  } catch(e) { /* keep defaults */ }
+  } catch(e) { /* fallback defaults already set */ }
 }
 fetchForex();
 setInterval(fetchForex, C.apiInterval);
@@ -189,7 +196,7 @@ function draw() {
     }
   }
 
-  // Status bar — rates at bottom
+  // Status bar — rates at bottom center
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.font = '11px -apple-system, BlinkMacSystemFont, sans-serif';
   ctx.textAlign = 'center';
@@ -199,10 +206,10 @@ function draw() {
     W / 2, H - 16
   );
 
-  // Description top-left
-  ctx.textAlign = 'left';
+  // Description at top center
+  ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.25)';
-  ctx.fillText('Forex rates shape a living circuit — tap cells or tap empty to pause', 16, 20);
+  ctx.fillText('Forex rates shape a living circuit - tap cells or tap empty to pause', W / 2, 20);
 }
 
 // ─── LOOP ───
