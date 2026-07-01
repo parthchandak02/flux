@@ -17,3 +17,7 @@ Live exchange rates shape the evolution of a cellular automata colony on a circu
 **Live:** https://parthchandak02.github.io/flux/
 
 **Tech:** Native Canvas 2D, single HTML file, zero dependencies.
+
+---
+
+Part of the [daily generative builds](https://github.com/parthchandak02/parthchandak02#featured-projects) series: [tessellate](https://parthchandak02.github.io/tessellate/) · [flora](https://parthchandak02.github.io/flora/) · [grow](https://parthchandak02.github.io/grow/) · [drift](https://parthchandak02.github.io/drift/) · [trace](https://parthchandak02.github.io/trace/) · [resonate](https://parthchandak02.github.io/resonate/) · [swell](https://parthchandak02.github.io/swell/) · [flux](https://parthchandak02.github.io/flux/)
