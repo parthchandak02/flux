@@ -22,9 +22,9 @@
 
 <br><br>
 
-<a href="https://parthchandak02.github.io/flux/"><img src="docs/assets/readme/hero.jpg" width="100%" alt="A 64 by 48 grid of glowing lime-green live cells and dim red just-died cells on a near-black dot grid, with EUR/USD 1.0842 in the top-right corner and a generation counter along the bottom"></a>
+<a href="https://parthchandak02.github.io/flux/"><img src="docs/assets/readme/hero.jpg" width="100%" alt="A 64 by 48 grid of glowing lime-green live cells and dim red just-died cells on a near-black dot grid, with the live EUR/USD rate in the top-right corner and a generation counter along the bottom"></a>
 
-<sub>Live capture, 22 October 2026. The EUR/USD figure is the built-in fallback rate; see the note below.</sub>
+<sub>Live capture, 23 October 2026.</sub>
 
 </div>
 
@@ -50,10 +50,9 @@ generations and live versus dead cells.
 Click or tap a cell to flip it alive or dead. Click outside the grid to pause or resume.
 
 > **Note.** Frankfurter publishes reference rates once per working day, so within one visit the
-> rates rarely change and the colony usually stays pale lime at the slowest speed. The page also
-> calls the old `api.frankfurter.app` address, which now redirects to `api.frankfurter.dev`
-> without CORS headers, so in a browser the fetch fails and the fixed fallback rates
-> (1.0842 USD, 0.8561 GBP, 162.43 JPY) are shown. The automaton itself runs either way.
+> rates rarely change and the colony usually stays pale lime at the slowest speed. If the API
+> can't be reached, the status line says so and fixed fallback rates (1.0842 USD, 0.8561 GBP,
+> 162.43 JPY) are shown. The automaton itself runs either way.
 
 ## Run it
 

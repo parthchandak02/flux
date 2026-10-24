@@ -8,14 +8,10 @@
 *{margin:0;padding:0;box-sizing:border-box}
 html,body{width:100%;height:100%;overflow:hidden;background:#0a0a0f}
 canvas{position:fixed;top:0;left:0;width:100%;height:100%;display:block;touch-action:manipulation;image-rendering:pixelated}
-#databar{position:fixed;bottom:52px;left:0;right:0;text-align:center;color:rgba(0,255,100,0.3);font:10px/1.2 'Courier New',monospace;letter-spacing:1px;pointer-events:none;z-index:10}
-#geninfo{position:fixed;top:24px;right:24px;text-align:right;color:rgba(0,255,100,0.25);font:10px/1.5 'Courier New',monospace;pointer-events:none;z-index:10;letter-spacing:0.5px}
 </style>
 </head>
 <body>
 <canvas id="c"></canvas>
-<div id="databar">Frankfurter Forex · loading...</div>
-<div id="geninfo"></div>
 <script>
 // ─── CONFIG ───
 const C = {
@@ -25,7 +21,7 @@ const C = {
   aliveGlow: 10,
   dyingGlow: 6,
   dotSpacing: 24,
-  apiUrl: 'https://api.frankfurter.app/latest?from=EUR&to=USD,GBP,JPY',
+  apiUrl: 'https://api.frankfurter.dev/v1/latest?from=EUR&to=USD,GBP,JPY',
   apiInterval: 30000,
   warmupSteps: 25,
   initialDensity: 0.28,
@@ -77,6 +73,7 @@ let ratesDisplay = { USD: '1.0842', GBP: '0.8561', JPY: '162.43' };
 async function fetchForex() {
   try {
     const res = await fetch(C.apiUrl);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
     const r = data.rates;
     let dirSum = 0, volSum = 0, count = 0;
@@ -97,9 +94,9 @@ async function fetchForex() {
       volatility = Math.min(1, volSum / count);
       C.updateInterval = Math.round(C.maxInterval - volatility * (C.maxInterval - C.minInterval));
       lastForexUpdate = Date.now();
-      lastFetchTime = performance.now();
+      forexError = false;
     }
-  } catch(e) { /* fallback defaults already set */ }
+  } catch(e) { forexError = true; /* fallback defaults already set */ }
 }
 fetchForex();
 setInterval(fetchForex, C.apiInterval);
@@ -110,6 +107,7 @@ let dying = new Set();
 let running = true;
 let gen = 0;
 let lastForexUpdate = 0;
+let forexError = false;
 
 function initGrid(density) {
   grid = [];
@@ -232,9 +230,11 @@ function draw() {
   ctx.textAlign = 'center';
   ctx.fillStyle = 'rgba(255,255,255,0.35)';
   ctx.font = '10px system-ui, sans-serif';
-  const secsAgo = lastForexUpdate ? Math.floor((Date.now() - lastForexUpdate) / 1000) : '--';
+  const status = lastForexUpdate
+    ? 'updated ' + Math.floor((Date.now() - lastForexUpdate) / 1000) + 's ago'
+    : forexError ? 'offline, fallback rate' : 'loading...';
   ctx.fillText(
-    'Frankfurter Forex \u00B7 EUR/USD ' + ratesDisplay.USD + ' \u00B7 Gen ' + gen + ' \u00B7 updated ' + secsAgo + 's ago',
+    'Frankfurter Forex \u00B7 EUR/USD ' + ratesDisplay.USD + ' \u00B7 Gen ' + gen + ' \u00B7 ' + status,
     W / 2, H - 14
   );
 
@@ -259,14 +259,6 @@ let lastUpdate = 0;
 function tick(ts) {
   if (running && ts - lastUpdate > C.updateInterval) {
     step();
-    genCount++;
-    let alive = 0;
-    for (let y = 0; y < C.rows; y++)
-      for (let x = 0; x < C.cols; x++)
-        if (grid[y][x]) alive++;
-    const dead = C.cols * C.rows - alive;
-    updateDataBar(ratesDisplay.USD, 'EUR/USD');
-    updateGenInfo(alive, dead);
     lastUpdate = ts;
   }
   draw();
@@ -312,19 +304,6 @@ canvas.addEventListener('touchstart', e => {
 lastUpdate = performance.now();
 tick(lastUpdate);
 
-let genCount = 0;
-let lastFetchTime = performance.now();
-function updateDataBar(rate, pair) {
-  const el = document.getElementById('databar');
-  if (!el) return;
-  const ago = Math.round((performance.now() - lastFetchTime) / 1000);
-  el.textContent = `Frankfurter Forex · ${pair} ${rate} · gen ${genCount} · ${ago}s ago`;
-}
-function updateGenInfo(alive, dead) {
-  const el = document.getElementById('geninfo');
-  if (!el) return;
-  el.textContent = `alive ${alive} · dead ${dead}`;
-}
 </script>
 </body>
 </html>
