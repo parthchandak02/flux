@@ -21,7 +21,8 @@ const C = {
   aliveGlow: 10,
   dyingGlow: 6,
   dotSpacing: 24,
-  apiUrl: 'https://api.frankfurter.dev/v1/latest?from=EUR&to=USD,GBP,JPY',
+  // ECB-only rates, as v1 served; v2 otherwise blends several providers
+  apiUrl: 'https://api.frankfurter.dev/v2/rates?base=EUR&quotes=USD,GBP,JPY&providers=ecb',
   apiInterval: 30000,
   warmupSteps: 25,
   initialDensity: 0.28,
@@ -75,7 +76,9 @@ async function fetchForex() {
     const res = await fetch(C.apiUrl);
     if (!res.ok) throw new Error('HTTP ' + res.status);
     const data = await res.json();
-    const r = data.rates;
+    // v2 returns one { quote, rate } row per currency
+    const r = {};
+    for (const row of data) r[row.quote] = row.rate;
     let dirSum = 0, volSum = 0, count = 0;
     for (const ccy of ['USD', 'GBP', 'JPY']) {
       if (r[ccy]) {
